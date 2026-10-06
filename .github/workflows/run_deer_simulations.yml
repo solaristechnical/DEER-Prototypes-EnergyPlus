@@ -32,7 +32,7 @@ on:
       keep_running: {description: "Do not stop instance after run",  type: boolean, default: false}
 
 concurrency:
-  group: ec2-simulations2
+  group: ec2-server5
   cancel-in-progress: false
 
 permissions:
