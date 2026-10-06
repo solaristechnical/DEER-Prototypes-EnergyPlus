@@ -350,12 +350,22 @@ jobs:
         shell: bash
         run: |
           mkdir -p qc-artifacts
-
+          # Download scenario-index.json from the package-qc step outputs
           aws s3 cp \
-            "s3://${{ vars.SIMULATION_BUCKET }}/githubactions/${{ github.run_id }}/qc/simulation_stats.csv" \
-            "qc-artifacts/simulation_stats.csv"
+            "s3://${{ vars.SIMULATION_BUCKET }}/githubactions/${{ github.run_id }}/outputs/package-qc/scenario-index.json" \
+            "scenario-index.json"
 
-          test -s "qc-artifacts/simulation_stats.csv"
+          # Iterate over scenarios from scenario index
+          # Scenario index is just an unnamed list of dictionaries, each element representing a scenario with element scenarioId
+          # scenarioId is a folder name that may include spaces.
+          while IFS= read -r scenario; do
+            echo "Processing scenario: $scenario"
+            aws s3 cp \
+              "s3://${{ vars.SIMULATION_BUCKET }}/githubactions/${{ github.run_id }}/outputs/compose/${scenario}/compose.log" \
+              "qc-artifacts/${scenario}-compose.log"
+
+            test -s "qc-artifacts/${scenario}-compose.log"
+          done < <(jq -r '.[].scenarioId' scenario-index.json)
 
       - name: Upload QC results
         id: upload-qc
@@ -363,7 +373,7 @@ jobs:
         with:
           name: deer-qc-results-${{ github.run_id }}
           path: |
-            qc-artifacts/simulation_stats.csv
+            qc-artifacts/*-compose.log
           if-no-files-found: error
           retention-days: 30
 
@@ -386,7 +396,7 @@ jobs:
           echo "### QC results" >> "$GITHUB_STEP_SUMMARY"
           echo "" >> "$GITHUB_STEP_SUMMARY"
           echo "- ${{ steps.upload-qc.outputs.artifact-url }}" >> "$GITHUB_STEP_SUMMARY"
-          echo "- Included file: \`simulation_stats.csv\`" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Included file: \`*-compose.log\`" >> "$GITHUB_STEP_SUMMARY"
           echo "- S3 archive: \`s3://${{ vars.SIMULATION_BUCKET }}/githubactions/${{ github.run_id }}/qc/\`" >> "$GITHUB_STEP_SUMMARY"
 
   simulate:
