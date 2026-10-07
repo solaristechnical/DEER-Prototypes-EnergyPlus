@@ -570,7 +570,7 @@ jobs:
           download_required "outputs/package-qc/scenario-index.json" "scenario-index.json"
           
           # Download transcript and compose-qc outputs for each scenario
-          download_required "outputs/compose-qc/transcript_compose-qc.log" "transcript_compose-qc.log"
+          download_required "attempt-${{ github.run_attempt }}/transcript_compose-qc.log" "transcript_compose-qc.log"
 
           # Iterate over scenarios from scenario index
           # Scenario index is just an unnamed list of dictionaries, each element representing a scenario with element scenarioId
@@ -725,7 +725,7 @@ jobs:
           download_required "outputs/package-qc/scenario-index.json" "scenario-index.json"
 
           # Download transcript and simulate outputs for each scenario
-          download_required "outputs/simulate/transcript_simulate.log" "transcript_simulate.log"
+          download_required "transcript_simulate.log" "transcript_simulate.log"
 
           # Iterate over scenarios from scenario index
           # Scenario index is just an unnamed list of dictionaries, each element representing a scenario with element scenarioId
