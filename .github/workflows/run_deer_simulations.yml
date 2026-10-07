@@ -566,19 +566,10 @@ jobs:
             echo "::error::Required artifact was not available: $source"
             return 1
           }
-          # Download scenario-index.json from the package-qc step outputs
-          download_required "outputs/package-qc/scenario-index.json" "scenario-index.json"
           
           # Download transcript and compose-qc outputs for each scenario
           download_required "attempt-${{ github.run_attempt }}/transcript_compose-qc.log" "transcript_compose-qc.log"
-
-          # Iterate over scenarios from scenario index
-          # Scenario index is just an unnamed list of dictionaries, each element representing a scenario with element scenarioId
-          # scenarioId is a folder name that may include spaces.
-          while IFS= read -r scenario; do
-            echo "Processing scenario: $scenario"
-            download_required "outputs/compose-qc/${scenario}/composeQc.json" "outputs/compose-qc/${scenario}-composeQc.json"
-          done < <(jq -r '.[].scenarioId' scenario-index.json)
+          download_required "outputs/compose-qc/composeQc.json" "outputs/compose-qc/composeQc.json"
 
       - name: Upload artifacts to Github
         id: upload-artifacts
@@ -588,7 +579,7 @@ jobs:
           path: |
             step-status.json
             transcript_compose-qc.log
-            outputs/compose-qc/*-composeQc.json
+            outputs/compose-qc/composeQc.json
           if-no-files-found: error
           retention-days: 30
 
@@ -608,7 +599,7 @@ jobs:
           echo "### Downloads" >> "$GITHUB_STEP_SUMMARY"
           echo "" >> "$GITHUB_STEP_SUMMARY"
           echo "- [Compose QC results](${{ steps.upload-artifacts.outputs.artifact-url }})" >> "$GITHUB_STEP_SUMMARY"
-          echo "- Included file: \`*-composeQc.json\`" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Included file: \`composeQc.json\`" >> "$GITHUB_STEP_SUMMARY"
 
   simulate:
     needs: [package-qc, compose-qc]
@@ -725,7 +716,7 @@ jobs:
           download_required "outputs/package-qc/scenario-index.json" "scenario-index.json"
 
           # Download transcript and simulate outputs for each scenario
-          download_required "transcript_simulate.log" "transcript_simulate.log"
+          download_required "attempt-${{ github.run_attempt }}/transcript_simulate.log" "transcript_simulate.log"
 
           # Iterate over scenarios from scenario index
           # Scenario index is just an unnamed list of dictionaries, each element representing a scenario with element scenarioId
