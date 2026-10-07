@@ -611,6 +611,10 @@ jobs:
         with:
           role-to-assume: ${{ vars.AWS_SIMULATION_ROLE_ARN }}
           aws-region: us-east-1
+          # Keep credentials alive long enough for simulations to complete.
+          # Otherwise, aws may throw ExpiredTokenException
+          # Default role duration is 1 hour (3600 seconds)
+          role-duration-seconds: 43200
 
       - name: Send command to server
         id: sendCommand
