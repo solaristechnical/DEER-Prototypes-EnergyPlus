@@ -199,7 +199,7 @@ jobs:
           fi
 
       - name: Download QC artifacts from S3
-        id: download-qc
+        id: download-artifacts
         shell: bash
         run: |
           # Define a function to download required artifacts from S3 with retries
@@ -230,11 +230,11 @@ jobs:
           test -s "outputs/measure-qc.md"
           test -s "outputs/scenario-index.json"
 
-      - name: Upload QC results bundle
-        id: upload-qc-zip
+      - name: Upload artifacts bundle
+        id: upload-artifacts
         uses: actions/upload-artifact@v7
         with:
-          name: package-qc
+          name: package-qc-${{ github.run_id }}-${{ github.run_attempt }}
           path: |
             transcript_package-qc.log
             step-status.json
@@ -286,7 +286,7 @@ jobs:
           echo "" >> "$GITHUB_STEP_SUMMARY"
           echo "### QC results" >> "$GITHUB_STEP_SUMMARY"
           echo "" >> "$GITHUB_STEP_SUMMARY"
-          if [[ ${{ steps.download-qc.outcome }} == "success" ]]; then
+          if [[ ${{ steps.download-artifacts.outcome }} == "success" ]]; then
             cat outputs/measure-qc.md >> $GITHUB_STEP_SUMMARY
           else
             echo "QC results not available." >> "$GITHUB_STEP_SUMMARY"
@@ -295,7 +295,7 @@ jobs:
           echo "- [measure-qc.json](${{ steps.upload-measure-qc-json.outputs.artifact-url }})" >> "$GITHUB_STEP_SUMMARY"
           echo "- [measure-qc.md](${{ steps.upload-measure-qc-md.outputs.artifact-url }})" >> "$GITHUB_STEP_SUMMARY"
           echo "- [scenario-index.json](${{ steps.upload-scenario-index-json.outputs.artifact-url }})" >> "$GITHUB_STEP_SUMMARY"
-          echo "- Additional debug info - [package-qc.zip](${{ steps.upload-qc-zip.outputs.artifact-url }})" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Additional debug info - [package-qc.zip](${{ steps.upload-artifacts.outputs.artifact-url }})" >> "$GITHUB_STEP_SUMMARY"
 
   compose:
     needs: package-qc
@@ -386,8 +386,8 @@ jobs:
             exit 1
           fi
 
-      - name: Download QC artifacts from S3
-        id: download-qc
+      - name: Download artifacts from S3
+        id: download-artifacts
         shell: bash
         run: |
           # Define a function to download required artifacts from S3 with retries
@@ -427,11 +427,11 @@ jobs:
               "outputs/compose/${scenario}-compose.log"
           done < <(jq -r '.[].scenarioId' scenario-index.json)
 
-      - name: Upload QC results
-        id: upload-qc
+      - name: Upload artifacts to Github
+        id: upload-artifacts
         uses: actions/upload-artifact@v7
         with:
-          name: deer-qc-results-${{ github.run_id }}
+          name: compose-${{ github.run_id }}-${{ github.run_attempt }}
           path: |
             step-status.json
             transcript_compose.log
@@ -454,7 +454,7 @@ jobs:
           echo "" >> "$GITHUB_STEP_SUMMARY"
           echo "### Downloads" >> "$GITHUB_STEP_SUMMARY"
           echo "" >> "$GITHUB_STEP_SUMMARY"
-          echo "- [Compose logs](${{ steps.upload-qc.outputs.artifact-url }})" >> "$GITHUB_STEP_SUMMARY"
+          echo "- [Compose logs](${{ steps.upload-artifacts.outputs.artifact-url }})" >> "$GITHUB_STEP_SUMMARY"
 
   compose-qc:
     needs: [package-qc, compose]
@@ -544,8 +544,8 @@ jobs:
             exit 1
           fi
 
-      - name: Download QC artifacts from S3
-        id: download-qc
+      - name: Download artifacts from S3
+        id: download-artifacts
         shell: bash
         run: |
           # Define a function to download required artifacts from S3 with retries
@@ -580,11 +580,11 @@ jobs:
             download_required "outputs/compose-qc/${scenario}/composeQc.json" "outputs/compose-qc/${scenario}-composeQc.json"
           done < <(jq -r '.[].scenarioId' scenario-index.json)
 
-      - name: Upload QC results
-        id: upload-qc
+      - name: Upload artifacts to Github
+        id: upload-artifacts
         uses: actions/upload-artifact@v7
         with:
-          name: deer-qc-results-${{ github.run_id }}
+          name: compose-qc-${{ github.run_id }}-${{ github.run_attempt }}
           path: |
             step-status.json
             transcript_compose-qc.log
@@ -607,19 +607,166 @@ jobs:
           echo "" >> "$GITHUB_STEP_SUMMARY"
           echo "### Downloads" >> "$GITHUB_STEP_SUMMARY"
           echo "" >> "$GITHUB_STEP_SUMMARY"
-          echo "- [Compose QC results](${{ steps.upload-qc.outputs.artifact-url }})" >> "$GITHUB_STEP_SUMMARY"
+          echo "- [Compose QC results](${{ steps.upload-artifacts.outputs.artifact-url }})" >> "$GITHUB_STEP_SUMMARY"
           echo "- Included file: \`*-composeQc.json\`" >> "$GITHUB_STEP_SUMMARY"
 
   simulate:
-    needs: compose
+    needs: [package-qc, compose-qc]
+    if: ${{ inputs.simulate == true }}
     runs-on: ubuntu-latest
     steps:
-      - run: |
-          echo "Hello world!"
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v6
+        with:
+          role-to-assume: ${{ vars.AWS_SIMULATION_ROLE_ARN }}
+          aws-region: us-east-1
+
+      - name: Send command to server
+        id: sendCommand
+        shell: bash
+        run: |
+          # The bootstrap script downloads the simulation script and then launches it.
+          COMMAND="pwsh 'C:/DEER/deer-cloud-compute-setup/workflow/BootstrapSimulation.ps1'"
+          COMMAND+=" -RunId '${{ github.run_id }}'"
+          COMMAND+=" -Repository '${{ github.repository }}'"
+          COMMAND+=" -CommitSha '${{ needs.package-qc.outputs.sha }}'"
+          COMMAND+=" -MeasurePath '${{ inputs.measure_path }}'"
+          COMMAND+=" -S3Bucket '${{ vars.SIMULATION_BUCKET }}'"
+          COMMAND+=" -RunAttempt '${{ github.run_attempt }}'"
+          COMMAND+=" -RequestedSteps 'simulate'"
+          echo "COMMAND=$COMMAND"
+          PARAMS=$(jq -nc --arg command "$COMMAND" '{commands:[$command]}')
+          echo "PARAMS=$PARAMS"
+          COMMAND_ID=$(aws ssm send-command \
+            --instance-ids "${{ vars.SIMULATION_INSTANCE_ID }}" \
+            --document-name "AWS-RunPowerShellScript" \
+            --parameters "$PARAMS" \
+            --cloud-watch-output-config CloudWatchOutputEnabled=true,CloudWatchLogGroupName="/aws/ssm/githubactions" \
+            --query 'Command.CommandId' \
+            --output text \
+            )
+          echo "command_id=$COMMAND_ID" >> $GITHUB_OUTPUT
+          echo "## Simulation task submitted" >> $GITHUB_STEP_SUMMARY
+          echo "- SSM Command ID: $COMMAND_ID" >> $GITHUB_STEP_SUMMARY
+          
+      - name: Wait for commands to complete
+        shell: bash
+        run: |
+          while true; do
+            STATUS=$(aws ssm get-command-invocation \
+              --instance-id "${{ vars.SIMULATION_INSTANCE_ID }}" \
+              --command-id "${{ steps.sendCommand.outputs.command_id }}" \
+              --query "Status" \
+              --output text)
+            echo "Current status: $STATUS"
+            if [[ "$STATUS" == "Failed" ]]; then
+                echo "SSM command failed"
+                exit 1
+            fi
+            if [[ "$STATUS" == "Cancelled" ]]; then
+                echo "SSM command cancelled"
+                exit 1
+            fi
+            if [[ "$STATUS" == "Success" ]]; then
+                break
+            fi
+            sleep 30
+          done
+
+      - name: Download status file
+        shell: bash
+        run: |
+          for i in {1..10}; do
+            if aws s3 cp \
+              "s3://${{ vars.SIMULATION_BUCKET }}/githubactions/${{ github.run_id }}/steps/simulate/step-status.json" \
+              step-status.json
+            then
+              break
+            fi
+
+            echo "Waiting for status.json..."
+            sleep 10
+          done
+
+      - name: Validate status
+        shell: bash
+        run: |
+          STATUS=$(jq -r .Status step-status.json)
+
+          if [[ "$STATUS" != "Success" ]]; then
+            echo "Simulation failed"
+            cat step-status.json
+            exit 1
+          fi
+
+      - name: Download artifacts from S3
+        id: download-artifacts
+        shell: bash
+        run: |
+          # Define a function to download required artifacts from S3 with retries
+          download_required() {
+            local base_s3_path="s3://${{ vars.SIMULATION_BUCKET }}/githubactions/${{ github.run_id }}"
+            local source="$1"
+            local destination="$2"
+            mkdir -p "$(dirname "$destination")"
+
+            for attempt in {1..10}; do  
+              if aws s3 cp "${base_s3_path}/${source}" "$destination"; then
+                test -s "$destination" && return 0
+              fi
+              echo "Waiting for $(basename "$destination")..."
+              sleep 10
+            done
+
+            echo "::error::Required artifact was not available: $source"
+            return 1
+          }
+          # Download scenario-index.json from the package-qc step outputs
+          download_required "outputs/package-qc/scenario-index.json" "scenario-index.json"
+
+          # Download transcript and simulate outputs for each scenario
+          download_required "outputs/simulate/transcript_simulate.log" "transcript_simulate.log"
+
+          # Iterate over scenarios from scenario index
+          # Scenario index is just an unnamed list of dictionaries, each element representing a scenario with element scenarioId
+          # scenarioId is a folder name that may include spaces.
+          while IFS= read -r scenario; do
+            echo "Processing scenario: $scenario"
+            download_required "outputs/simulate/${scenario}/simulate.log" "outputs/simulate/${scenario}-simulate.log"
+          done < <(jq -r '.[].scenarioId' scenario-index.json)
+
+      - name: Upload artifacts
+        id: upload-artifacts
+        uses: actions/upload-artifact@v7
+        with:
+          name: simulate-${{ github.run_id }}-${{github.run_attempt}}
+          path: |
+            step-status.json
+            transcript_simulate.log
+            outputs/*-simulate.log
+          if-no-files-found: error
+          retention-days: 30
+
+      - name: Add summary
+        shell: bash
+        run: |
+          STATUS=$(jq -r .Status step-status.json)
+          echo "## Simulation task status" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "- Runtime (seconds): $(jq -r .RunTimeSeconds step-status.json)" >> $GITHUB_STEP_SUMMARY
+          echo "- Status: $(jq -r .Status step-status.json)" >> $GITHUB_STEP_SUMMARY
+          if [[ "$STATUS" != "Success" ]]; then
+            echo "- Failure message: $(jq -r .FailureMessage step-status.json)" >> $GITHUB_STEP_SUMMARY
+          fi
+
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "### Downloads" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "- [Simulation results](${{ steps.upload-artifacts.outputs.artifact-url }})" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Included file: \`transcript_simulate.log\` and \`outputs/simulate*.log\`" >> "$GITHUB_STEP_SUMMARY"
 
   collect:
     needs: simulate
-    if: ${{ inputs.simulate == true }}
     runs-on: ubuntu-latest
     steps:
       - run: |
