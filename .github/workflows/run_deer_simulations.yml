@@ -202,15 +202,15 @@ jobs:
         id: download-qc
         shell: bash
         run: |
-          mkdir -p outputs
           # Define a function to download required artifacts from S3 with retries
           download_required() {
             local source="$1"
             local destination="$2"
-
             local base_s3_path="s3://${{ vars.SIMULATION_BUCKET }}/githubactions/${{ github.run_id }}"
 
-            for attempt in {1..10}; do
+            mkdir -p "$(dirname "$destination")"
+
+            for attempt in {1..10}; do  
               if aws s3 cp "${base_s3_path}/${source}" "$destination"; then
                 test -s "$destination" && return 0
               fi
@@ -390,12 +390,13 @@ jobs:
         id: download-qc
         shell: bash
         run: |
-          mkdir -p qc-artifacts
           # Define a function to download required artifacts from S3 with retries
           download_required() {
             local source="$1"
             local destination="$2"
             local base_s3_path="s3://${{ vars.SIMULATION_BUCKET }}/githubactions/${{ github.run_id }}"
+            mkdir -p "$(dirname "$destination")"
+
             for attempt in {1..10}; do
               if aws s3 cp "${base_s3_path}/${source}" "$destination"; then
                 test -s "$destination" && return 0
@@ -547,14 +548,14 @@ jobs:
         id: download-qc
         shell: bash
         run: |
-          mkdir -p qc-artifacts
           # Define a function to download required artifacts from S3 with retries
           download_required() {
             local base_s3_path="s3://${{ vars.SIMULATION_BUCKET }}/githubactions/${{ github.run_id }}"
             local source="$1"
             local destination="$2"
+            mkdir -p "$(dirname "$destination")"
 
-            for attempt in {1..10}; do
+            for attempt in {1..10}; do  
               if aws s3 cp "${base_s3_path}/${source}" "$destination"; then
                 test -s "$destination" && return 0
               fi
@@ -569,7 +570,7 @@ jobs:
           download_required "outputs/package-qc/scenario-index.json" "scenario-index.json"
           
           # Download transcript and compose-qc outputs for each scenario
-          download_required "outputs/package-qc/transcript_compose-qc.log" "transcript_compose-qc.log"
+          download_required "outputs/compose-qc/transcript_compose-qc.log" "transcript_compose-qc.log"
 
           # Iterate over scenarios from scenario index
           # Scenario index is just an unnamed list of dictionaries, each element representing a scenario with element scenarioId
