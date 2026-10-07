@@ -142,12 +142,13 @@ jobs:
             --output text \
             )
           echo "command_id=$COMMAND_ID" >> $GITHUB_OUTPUT
-          echo "## Measure QC submitted" >> $GITHUB_STEP_SUMMARY
-          echo "- S3 archive: \`s3://${{ vars.SIMULATION_BUCKET }}/githubactions/${{ github.run_id }}\`" >> "$GITHUB_STEP_SUMMARY"
+          echo "### Measure QC task submitted" >> $GITHUB_STEP_SUMMARY
           echo "- Run ID: ${{ github.run_id }}" >> $GITHUB_STEP_SUMMARY
+          echo "- Repository: ${{ github.repository }}" >> $GITHUB_STEP_SUMMARY
           echo "- Commit SHA: ${{ steps.gitinfo.outputs.sha }}" >> $GITHUB_STEP_SUMMARY
           echo "- Measure path: ${{ inputs.measure_path }}" >> $GITHUB_STEP_SUMMARY
           echo "- SSM Command ID: $COMMAND_ID" >> $GITHUB_STEP_SUMMARY
+          echo "- S3 archive: \`s3://${{ vars.SIMULATION_BUCKET }}/githubactions/${{ github.run_id }}\`" >> "$GITHUB_STEP_SUMMARY"
           echo "- Log file: s3://${{ vars.SIMULATION_BUCKET }}/githubactions/${{ github.run_id }}/attempt-${{ github.run_attempt }}/transcript_package-qc.log" >> $GITHUB_STEP_SUMMARY
 
       - name: Wait for commands to complete
@@ -201,40 +202,81 @@ jobs:
         id: download-qc
         shell: bash
         run: |
-          mkdir -p qc-artifacts
+          mkdir -p outputs
+          # Define a function to download required artifacts from S3 with retries
+          download_required() {
+            local source="$1"
+            local destination="$2"
 
-          aws s3 cp \
-            "s3://${{ vars.SIMULATION_BUCKET }}/githubactions/${{ github.run_id }}/outputs/package-qc/measure-qc.json" \
-            "outputs/package-qc/measure-qc.json"
-          aws s3 cp \
-            "s3://${{ vars.SIMULATION_BUCKET }}/githubactions/${{ github.run_id }}/outputs/package-qc/measure-qc.md" \
-            "outputs/package-qc/measure-qc.md"
-          aws s3 cp \
-            "s3://${{ vars.SIMULATION_BUCKET }}/githubactions/${{ github.run_id }}/outputs/package-qc/scenario-index.json" \
-            "outputs/package-qc/scenario-index.json"
+            local base_s3_path="s3://${{ vars.SIMULATION_BUCKET }}/githubactions/${{ github.run_id }}"
 
-          test -s "outputs/package-qc/measure-qc.json"
-          test -s "outputs/package-qc/measure-qc.md"
-          test -s "outputs/package-qc/scenario-index.json"
+            for attempt in {1..10}; do
+              if aws s3 cp "${base_s3_path}/${source}" "$destination"; then
+                test -s "$destination" && return 0
+              fi
+              echo "Waiting for $(basename "$destination")..."
+              sleep 10
+            done
 
-      - name: Upload QC results
-        id: upload-qc
+            echo "::error::Required artifact was not available: $source"
+            return 1
+          }
+          download_required "attempt-${{ github.run_attempt }}/transcript_package-qc.log" "transcript_package-qc.log"
+          download_required "outputs/package-qc/measure-qc.json" "outputs/measure-qc.json"
+          download_required "outputs/package-qc/measure-qc.md" "outputs/measure-qc.md"
+          download_required "outputs/package-qc/scenario-index.json" "outputs/scenario-index.json"
+          test -s "transcript_package-qc.log"
+          test -s "outputs/measure-qc.json"
+          test -s "outputs/measure-qc.md"
+          test -s "outputs/scenario-index.json"
+
+      - name: Upload QC results bundle
+        id: upload-qc-zip
         uses: actions/upload-artifact@v4
         with:
           name: package-qc
-          path: outputs/package-qc/*
+          path: |
+            transcript_package-qc.log
+            step-status.json
+            outputs/*
           if-no-files-found: error
           retention-days: 30
+      
+      - name: Upload measure-qc.json
+        id: upload-measure-qc-json
+        uses: actions/upload-artifact@v4
+        with:
+          name: measure-qc.json
+          path: outputs/measure-qc.json
+          if-no-files-found: error
+          retention-days: 30
+          archive: false
+      - name: Upload measure-qc.md
+        id: upload-measure-qc-md
+        uses: actions/upload-artifact@v4
+        with:
+          name: measure-qc.md
+          path: outputs/measure-qc.md
+          if-no-files-found: error
+          retention-days: 30
+          archive: false
+      - name: Upload scenario-index.json
+        id: upload-scenario-index-json
+        uses: actions/upload-artifact@v4
+        with:
+          name: scenario-index.json
+          path: outputs/scenario-index.json
+          if-no-files-found: error
+          retention-days: 30
+          archive: false
 
       - name: Add summary
         shell: bash
         run: |
           STATUS=$(jq -r .Status step-status.json)
-          echo "## Package QC submission info" >> $GITHUB_STEP_SUMMARY
+          echo "### Measure definition QC task status" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "- Repository: $(jq -r .Repository step-status.json)" >> $GITHUB_STEP_SUMMARY
-          echo "- Commit: ${{ steps.gitinfo.outputs.sha }}" >> $GITHUB_STEP_SUMMARY
-          echo "- Measure: ${{ inputs.measure_path }}" >> $GITHUB_STEP_SUMMARY
+          
           echo "- Runtime (seconds): $(jq -r .RunTimeSeconds step-status.json)" >> $GITHUB_STEP_SUMMARY
           echo "- Task status: $(jq -r .Status step-status.json)" >> $GITHUB_STEP_SUMMARY
           if [[ "$STATUS" != "Success" ]]; then
@@ -245,11 +287,15 @@ jobs:
           echo "### QC results" >> "$GITHUB_STEP_SUMMARY"
           echo "" >> "$GITHUB_STEP_SUMMARY"
           if [[ ${{ steps.download-qc.outcome }} == "success" ]]; then
-            cat outputs/package-qc/measure-qc.md >> $GITHUB_STEP_SUMMARY
+            cat outputs/measure-qc.md >> $GITHUB_STEP_SUMMARY
+          else
+            echo "QC results not available." >> "$GITHUB_STEP_SUMMARY"
           fi
-          echo "- ${{ steps.upload-qc.outputs.artifact-url }}" >> "$GITHUB_STEP_SUMMARY"
-          echo "- Included files: \`measure-qc.json,scenario-index.json\`" >> "$GITHUB_STEP_SUMMARY"
-          
+          echo "### Downloads" >> "$GITHUB_STEP_SUMMARY"
+          echo "- [measure-qc.json](${{ steps.upload-measure-qc-json.outputs.artifact-url }})" >> "$GITHUB_STEP_SUMMARY"
+          echo "- [measure-qc.md](${{ steps.upload-measure-qc-md.outputs.artifact-url }})" >> "$GITHUB_STEP_SUMMARY"
+          echo "- [scenario-index.json](${{ steps.upload-scenario-index-json.outputs.artifact-url }})" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Additional debug info - [package-qc.zip](${{ steps.upload-qc-zip.outputs.artifact-url }})" >> "$GITHUB_STEP_SUMMARY"
 
   compose:
     needs: package-qc
@@ -286,14 +332,11 @@ jobs:
             --output text \
             )
           echo "command_id=$COMMAND_ID" >> $GITHUB_OUTPUT
-          echo "## DEER Simulation Submitted" >> $GITHUB_STEP_SUMMARY
-          echo "- Run ID: ${{ github.run_id }}" >> $GITHUB_STEP_SUMMARY
-          echo "- Commit SHA: ${{ needs.package-qc.outputs.sha }}" >> $GITHUB_STEP_SUMMARY
-          echo "- Measure path: ${{ inputs.measure_path }}" >> $GITHUB_STEP_SUMMARY
+          echo "## Compose models summary" >> $GITHUB_STEP_SUMMARY
           echo "- SSM Command ID: $COMMAND_ID" >> $GITHUB_STEP_SUMMARY
-          echo "- Log file: s3://${{ vars.SIMULATION_BUCKET }}/githubactions/${{ github.run_id }}/attempt-${{ github.run_attempt }}/RunDeerSimulation.log" >> $GITHUB_STEP_SUMMARY
+          echo "- Log file: s3://${{ vars.SIMULATION_BUCKET }}/githubactions/${{ github.run_id }}/attempt-${{ github.run_attempt }}/transcript_compose.log" >> $GITHUB_STEP_SUMMARY
           
-      - name: Wait for simulation to complete
+      - name: Wait for commands to complete
         shell: bash
         run: |
           while true; do
@@ -332,7 +375,162 @@ jobs:
             sleep 10
           done
 
-          cat step-status.json
+      - name: Validate status
+        shell: bash
+        run: |
+          STATUS=$(jq -r .Status step-status.json)
+
+          if [[ "$STATUS" != "Success" ]]; then
+            echo "Simulation failed"
+            cat step-status.json
+            exit 1
+          fi
+
+      - name: Download QC artifacts from S3
+        id: download-qc
+        shell: bash
+        run: |
+          mkdir -p qc-artifacts
+          # Define a function to download required artifacts from S3 with retries
+          download_required() {
+            local source="$1"
+            local destination="$2"
+            local base_s3_path="s3://${{ vars.SIMULATION_BUCKET }}/githubactions/${{ github.run_id }}"
+            for attempt in {1..10}; do
+              if aws s3 cp "${base_s3_path}/${source}" "$destination"; then
+                test -s "$destination" && return 0
+              fi
+              echo "Waiting for $(basename "$destination")..."
+              sleep 10
+            done
+
+            echo "::error::Required artifact was not available: $source"
+            return 1
+          }
+          # Download the transcript for this step
+          download_required \
+            "attempt-${{ github.run_attempt }}/transcript_compose.log" \
+            "transcript_compose.log"
+          # Download scenario-index.json from the package-qc step outputs
+          download_required \
+            "outputs/package-qc/scenario-index.json" \
+            "scenario-index.json"
+
+          # Iterate over scenarios from scenario index
+          # Scenario index is just an unnamed list of dictionaries, each element representing a scenario with element scenarioId
+          # scenarioId is a folder name that may include spaces.
+          while IFS= read -r scenario; do
+            echo "Fetching scenario: $scenario"
+            download_required \
+              "outputs/compose/${scenario}/compose.log" \
+              "outputs/compose/${scenario}-compose.log"
+          done < <(jq -r '.[].scenarioId' scenario-index.json)
+
+      - name: Upload QC results
+        id: upload-qc
+        uses: actions/upload-artifact@v4
+        with:
+          name: deer-qc-results-${{ github.run_id }}
+          path: |
+            step-status.json
+            transcript_compose.log
+            outputs/compose/*-compose.log
+          if-no-files-found: error
+          retention-days: 30
+
+      - name: Add summary
+        shell: bash
+        run: |
+          STATUS=$(jq -r .Status step-status.json)
+          echo "## Compose task status" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "- Runtime (seconds): $(jq -r .RunTimeSeconds step-status.json)" >> $GITHUB_STEP_SUMMARY
+          echo "- Status: $(jq -r .Status step-status.json)" >> $GITHUB_STEP_SUMMARY
+          if [[ "$STATUS" != "Success" ]]; then
+            echo "- Failure message: $(jq -r .FailureMessage step-status.json)" >> $GITHUB_STEP_SUMMARY
+          fi
+
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "### Downloads" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "- [Compose logs](${{ steps.upload-qc.outputs.artifact-url }})" >> "$GITHUB_STEP_SUMMARY"
+
+  compose-qc:
+    needs: [package-qc, compose]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v6
+        with:
+          role-to-assume: ${{ vars.AWS_SIMULATION_ROLE_ARN }}
+          aws-region: us-east-1
+
+      - name: Send command to server
+        id: sendCommand
+        shell: bash
+        run: |
+          # The bootstrap script downloads the simulation script and then launches it.
+          COMMAND="pwsh 'C:/DEER/deer-cloud-compute-setup/workflow/BootstrapSimulation.ps1'"
+          COMMAND+=" -RunId '${{ github.run_id }}'"
+          COMMAND+=" -Repository '${{ github.repository }}'"
+          COMMAND+=" -CommitSha '${{ needs.package-qc.outputs.sha }}'"
+          COMMAND+=" -MeasurePath '${{ inputs.measure_path }}'"
+          COMMAND+=" -S3Bucket '${{ vars.SIMULATION_BUCKET }}'"
+          COMMAND+=" -RunAttempt '${{ github.run_attempt }}'"
+          COMMAND+=" -RequestedSteps 'compose-qc'"
+          echo "COMMAND=$COMMAND"
+          PARAMS=$(jq -nc --arg command "$COMMAND" '{commands:[$command]}')
+          echo "PARAMS=$PARAMS"
+          COMMAND_ID=$(aws ssm send-command \
+            --instance-ids "${{ vars.SIMULATION_INSTANCE_ID }}" \
+            --document-name "AWS-RunPowerShellScript" \
+            --parameters "$PARAMS" \
+            --cloud-watch-output-config CloudWatchOutputEnabled=true,CloudWatchLogGroupName="/aws/ssm/githubactions" \
+            --query 'Command.CommandId' \
+            --output text \
+            )
+          echo "command_id=$COMMAND_ID" >> $GITHUB_OUTPUT
+          echo "## Compose QC task submitted" >> $GITHUB_STEP_SUMMARY
+          echo "- SSM Command ID: $COMMAND_ID" >> $GITHUB_STEP_SUMMARY
+          
+      - name: Wait for commands to complete
+        shell: bash
+        run: |
+          while true; do
+            STATUS=$(aws ssm get-command-invocation \
+              --instance-id "${{ vars.SIMULATION_INSTANCE_ID }}" \
+              --command-id "${{ steps.sendCommand.outputs.command_id }}" \
+              --query "Status" \
+              --output text)
+            echo "Current status: $STATUS"
+            if [[ "$STATUS" == "Failed" ]]; then
+                echo "SSM command failed"
+                exit 1
+            fi
+            if [[ "$STATUS" == "Cancelled" ]]; then
+                echo "SSM command cancelled"
+                exit 1
+            fi
+            if [[ "$STATUS" == "Success" ]]; then
+                break
+            fi
+            sleep 30
+          done
+
+      - name: Download status file
+        shell: bash
+        run: |
+          for i in {1..10}; do
+            if aws s3 cp \
+              "s3://${{ vars.SIMULATION_BUCKET }}/githubactions/${{ github.run_id }}/steps/compose-qc/step-status.json" \
+              step-status.json
+            then
+              break
+            fi
+
+            echo "Waiting for status.json..."
+            sleep 10
+          done
 
       - name: Validate status
         shell: bash
@@ -350,21 +548,35 @@ jobs:
         shell: bash
         run: |
           mkdir -p qc-artifacts
+          # Define a function to download required artifacts from S3 with retries
+          download_required() {
+            local base_s3_path="s3://${{ vars.SIMULATION_BUCKET }}/githubactions/${{ github.run_id }}"
+            local source="$1"
+            local destination="$2"
+
+            for attempt in {1..10}; do
+              if aws s3 cp "${base_s3_path}/${source}" "$destination"; then
+                test -s "$destination" && return 0
+              fi
+              echo "Waiting for $(basename "$destination")..."
+              sleep 10
+            done
+
+            echo "::error::Required artifact was not available: $source"
+            return 1
+          }
           # Download scenario-index.json from the package-qc step outputs
-          aws s3 cp \
-            "s3://${{ vars.SIMULATION_BUCKET }}/githubactions/${{ github.run_id }}/outputs/package-qc/scenario-index.json" \
-            "scenario-index.json"
+          download_required "outputs/package-qc/scenario-index.json" "scenario-index.json"
+          
+          # Download transcript and compose-qc outputs for each scenario
+          download_required "outputs/package-qc/transcript_compose-qc.log" "transcript_compose-qc.log"
 
           # Iterate over scenarios from scenario index
           # Scenario index is just an unnamed list of dictionaries, each element representing a scenario with element scenarioId
           # scenarioId is a folder name that may include spaces.
           while IFS= read -r scenario; do
             echo "Processing scenario: $scenario"
-            aws s3 cp \
-              "s3://${{ vars.SIMULATION_BUCKET }}/githubactions/${{ github.run_id }}/outputs/compose/${scenario}/compose.log" \
-              "qc-artifacts/${scenario}-compose.log"
-
-            test -s "qc-artifacts/${scenario}-compose.log"
+            download_required "outputs/compose-qc/${scenario}/composeQc.json" "outputs/compose-qc/${scenario}-composeQc.json"
           done < <(jq -r '.[].scenarioId' scenario-index.json)
 
       - name: Upload QC results
@@ -373,7 +585,9 @@ jobs:
         with:
           name: deer-qc-results-${{ github.run_id }}
           path: |
-            qc-artifacts/*-compose.log
+            step-status.json
+            transcript_compose-qc.log
+            outputs/compose-qc/*-composeQc.json
           if-no-files-found: error
           retention-days: 30
 
@@ -381,11 +595,8 @@ jobs:
         shell: bash
         run: |
           STATUS=$(jq -r .Status step-status.json)
-          echo "## DEER Simulation Results" >> $GITHUB_STEP_SUMMARY
+          echo "## Compose QC task status" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "- Repository: $(jq -r .Repository step-status.json)" >> $GITHUB_STEP_SUMMARY
-          echo "- Commit: ${{ needs.package-qc.outputs.sha }}" >> $GITHUB_STEP_SUMMARY
-          echo "- Measure: ${{ inputs.measure_path }}" >> $GITHUB_STEP_SUMMARY
           echo "- Runtime (seconds): $(jq -r .RunTimeSeconds step-status.json)" >> $GITHUB_STEP_SUMMARY
           echo "- Status: $(jq -r .Status step-status.json)" >> $GITHUB_STEP_SUMMARY
           if [[ "$STATUS" != "Success" ]]; then
@@ -393,11 +604,10 @@ jobs:
           fi
 
           echo "" >> "$GITHUB_STEP_SUMMARY"
-          echo "### QC results" >> "$GITHUB_STEP_SUMMARY"
+          echo "### Downloads" >> "$GITHUB_STEP_SUMMARY"
           echo "" >> "$GITHUB_STEP_SUMMARY"
-          echo "- ${{ steps.upload-qc.outputs.artifact-url }}" >> "$GITHUB_STEP_SUMMARY"
-          echo "- Included file: \`*-compose.log\`" >> "$GITHUB_STEP_SUMMARY"
-          echo "- S3 archive: \`s3://${{ vars.SIMULATION_BUCKET }}/githubactions/${{ github.run_id }}/qc/\`" >> "$GITHUB_STEP_SUMMARY"
+          echo "- [Compose QC results](${{ steps.upload-qc.outputs.artifact-url }})" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Included file: \`*-composeQc.json\`" >> "$GITHUB_STEP_SUMMARY"
 
   simulate:
     needs: compose
