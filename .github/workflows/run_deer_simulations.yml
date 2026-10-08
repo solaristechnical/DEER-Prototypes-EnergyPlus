@@ -613,8 +613,9 @@ jobs:
           aws-region: us-east-1
           # Keep credentials alive long enough for simulations to complete.
           # Otherwise, aws may throw ExpiredTokenException
-          # Default role duration is 1 hour (3600 seconds)
-          role-duration-seconds: 43200
+          # Default role duration is 1 hour (3600 seconds), good enough except for simulation run.
+          # Maximum for this role is configured in AWS, try 4 hours (14400 seconds) if needed.
+          role-duration-seconds: 14400
 
       - name: resize server for simulation profile
         shell: bash
