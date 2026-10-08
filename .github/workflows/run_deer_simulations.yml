@@ -604,7 +604,8 @@ jobs:
   simulate:
     needs: [package-qc, compose-qc]
     if: ${{ inputs.simulate == true }}
-    runs-on: ubuntu-latest
+    # Use a smaller runner for this long-running simulation task
+    runs-on: ubuntu-slim
     steps:
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v6
