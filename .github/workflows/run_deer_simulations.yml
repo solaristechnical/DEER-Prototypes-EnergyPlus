@@ -616,6 +616,34 @@ jobs:
           # Default role duration is 1 hour (3600 seconds)
           role-duration-seconds: 43200
 
+      - name: resize server for simulation profile
+        shell: bash
+        run: |
+          echo "Resizing server for simulation profile..."
+          # Check the current AWS instance type
+          instanceType=$(aws ec2 describe-instances \
+            --instance-ids "${{ vars.SIMULATION_INSTANCE_ID }}" \
+            --query "Reservations[0].Instances[0].InstanceType" \
+            --output text
+          )
+          echo "Current instance type: $instanceType"
+          # Resize the instance if it doesn't match the desired simulation profile
+          desiredInstanceType="${{ vars.EC2_INSTANCE_TYPE_LARGE }}"  # Replace with your desired instance type
+          if [[ "$instanceType" != "$desiredInstanceType" ]]; then
+            echo "Resizing instance to $desiredInstanceType..."
+            aws ec2 modify-instance-attribute \
+              --instance-id "${{ vars.SIMULATION_INSTANCE_ID }}" \
+              --instance-type "{\"Value\": \"$desiredInstanceType\"}"
+          fi
+          # Wait a few seconds to allow the instance type change to take effect
+          sleep 10 
+          # Restart the instance to apply the new instance type
+          aws ec2 reboot-instances \
+            --instance-ids "${{ vars.SIMULATION_INSTANCE_ID }}"
+          # Wait until the instance is back online
+          aws ec2 wait instance-status-ok \
+            --instance-ids "${{ vars.SIMULATION_INSTANCE_ID }}"
+
       - name: Send command to server
         id: sendCommand
         shell: bash
@@ -759,6 +787,29 @@ jobs:
           echo "" >> "$GITHUB_STEP_SUMMARY"
           echo "- [Simulation results](${{ steps.upload-artifacts.outputs.artifact-url }})" >> "$GITHUB_STEP_SUMMARY"
           echo "- Included file: \`transcript_simulate.log\` and \`outputs/simulate*.log\`" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Resize server for normal profile
+        shell: bash
+        run: |
+          echo "Resizing server for normal profile..."
+          instanceType=$(aws ec2 describe-instances \
+            --instance-ids "${{ vars.SIMULATION_INSTANCE_ID }}" \
+            --query "Reservations[0].Instances[0].InstanceType" \
+            --output text)
+          echo "Current instance type: $instanceType"
+          desiredInstanceType="${{ vars.EC2_INSTANCE_TYPE_TEST }}"  # Replace with your desired instance type
+          if [[ "$instanceType" != "$desiredInstanceType" ]]; then
+            echo "Resizing instance to $desiredInstanceType..."
+            aws ec2 modify-instance-attribute \
+              --instance-id "${{ vars.SIMULATION_INSTANCE_ID }}" \
+              --instance-type "{\"Value\": \"$desiredInstanceType\"}"
+            sleep 10
+            aws ec2 reboot-instances \
+              --instance-ids "${{ vars.SIMULATION_INSTANCE_ID }}"
+          fi
+          # Wait until the instance is back online
+          aws ec2 wait instance-status-ok \
+            --instance-ids "${{ vars.SIMULATION_INSTANCE_ID }}"
 
   collect:
     needs: simulate
