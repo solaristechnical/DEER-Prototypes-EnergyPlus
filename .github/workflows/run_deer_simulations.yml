@@ -424,7 +424,7 @@ jobs:
             echo "Fetching scenario: $scenario"
             download_required \
               "outputs/compose/${scenario}/compose.log" \
-              "outputs/compose/${scenario}-compose.log"
+              "outputs/compose/${scenario}/compose.log"
           done < <(jq -r '.[].scenarioId' scenario-index.json)
 
       - name: Upload artifacts to Github
@@ -435,7 +435,7 @@ jobs:
           path: |
             step-status.json
             transcript_compose.log
-            outputs/compose/*-compose.log
+            outputs/compose/*/compose.log
           if-no-files-found: error
           retention-days: 30
 
