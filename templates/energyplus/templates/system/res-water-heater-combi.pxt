@@ -58,7 +58,7 @@ parameter "recirc_pipe_wall_conductivity", :default => 385.0
 # WaterHeater:Sizing inputs aligned with water-heater.pxt. In central mode, the number of units
 # defaults to the number of dwelling-unit WaterUse loads collected by root.pxt.
 parameter "num_dwelling_unit", :default => nil
-parameter "tank_size_per_dwelling_unit", :default => 50.0 ['gal']
+parameter "tank_size_per_dwelling_unit", :default => 20.0 ['gal']
 parameter "recover_cap_per_dwelling_unit", :default => 0.378541
 # Heating source for central_dhw: "water_heater" or "boiler".
 parameter "dhw_heating_source", :default => "water_heater", :domain => String
