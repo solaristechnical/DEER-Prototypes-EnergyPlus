@@ -1,0 +1,50 @@
+name: Run DEER simulations
+
+run-name: >-
+  Run by @${{ github.actor }} from ${{ inputs.model_ref }}
+  using ${{ inputs.run_profile }} profile
+  in ${{ inputs.measure_path }}
+
+on:
+  workflow_dispatch:
+    inputs:
+      model_ref:
+        description: Git branch, tag, or SHA
+        required: true
+        type: string
+      measure_path:
+        description: "Repository-relative path to the measure folder"
+        required: true
+        type: string
+      run_profile:
+        description: "Requested compute profile"
+        required: true
+        type: choice
+        options:
+          - test
+          - standard
+          - large
+      simulate:
+        description: "Simulate models after compose"
+        required: false
+        type: boolean
+        default: false
+      keep_running: {description: "Do not stop instance after run",  type: boolean, default: false}
+
+concurrency:
+  group: ec2-server5
+  cancel-in-progress: false
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  run:
+    uses: solaristechnical/deer-cloud-compute-setup/.github/workflows/deer_simulations.yml@main
+    with:
+      model_ref: ${{ inputs.model_ref }}
+      measure_path: ${{ inputs.measure_path }}
+      run_profile: ${{ inputs.run_profile }}
+      simulate: ${{ inputs.simulate }}
+      keep_running: ${{ inputs.keep_running }}
