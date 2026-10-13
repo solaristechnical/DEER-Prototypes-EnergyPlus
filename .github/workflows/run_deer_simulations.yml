@@ -41,7 +41,7 @@ permissions:
 
 jobs:
   run:
-    uses: solaristechnical/deer-cloud-compute-setup/.github/workflows/run_deer_simulations.yml@main
+    uses: solaristechnical/deer-cloud-compute-setup/.github/workflows/deer_simulations.yml@main
     with:
       model_ref: ${{ inputs.model_ref }}
       measure_path: ${{ inputs.measure_path }}
