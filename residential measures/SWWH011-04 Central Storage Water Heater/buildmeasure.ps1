@@ -14,7 +14,8 @@ $ErrorActionPreference = "Stop"
 $result3Script = "..\..\scripts\result3.py"
 $postProcessingScript = "..\..\scripts\post_processing.py"
 # Save a copy of MFm.py in the measure folder and fill in the blanks - measure folder, version, etc. Rename the file.
-$mfmScript = ".\MFm_SWWH011.py"
+$mfmExScript = ".\MFm_SWWH011_Ex.py"
+$mfmNewScript = ".\MFm_SWWH011_New.py"
 
 $query = "query.txt"
 
@@ -30,10 +31,17 @@ $CollectSteps = @(
         )
     },
     @{
-        Script  = $mfmScript
+        Script  = $mfmExScript
         Args    = @()
         Outputs = @(
-            "CEDARS_LoadShape_MFm.zip"
+            "CEDARS_LoadShape_MFm_Ex.zip"
+        )
+    }
+    @{
+        Script  = $mfmNewScript
+        Args    = @()
+        Outputs = @(
+            "CEDARS_LoadShape_MFm_New.zip"
         )
     }
 )
