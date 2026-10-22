@@ -181,13 +181,13 @@ def generate_schedule(BT):
     if BT == "Secondary":
         def determine_temperature_status(day_type_str: str, hour: int, minute: int) -> str:
             if day_type_str == "School_Wkday":
-                if hour in range(8, 11) or hour == 11 and minute <=10 or hour in range(13, 14) or hour == 14 and minute <= 10:
+                if hour in range(8, 11) or hour == 11 and minute < 10 or hour in range(13, 14) or hour == 14 and minute < 10:
                     return "active"
                 else:
                     return "setback"
 
             elif day_type_str == "Summer_Wkday":
-                if hour in range(9, 13) or hour == 13 and minute <= 10:
+                if hour in range(9, 13) or hour == 13 and minute < 10:
                     return "active"
                 else:
                     return "setback"
@@ -197,13 +197,13 @@ def generate_schedule(BT):
     else: # temperature status for EPr and ERC
         def determine_temperature_status(day_type_str: str, hour: int, minute: int) -> str:
             if day_type_str == "School_Wkday":
-                if hour in range(8, 11) or hour == 11 and minute <=10 or hour in range(13, 15) or hour == 15 and minute <= 10:
+                if hour in range(8, 11) or hour == 11 and minute < 10 or hour in range(13, 15) or hour == 15 and minute < 10:
                     return "active"
                 else:
                     return "setback"
 
             elif day_type_str == "Summer_Wkday":
-                if hour in range(9, 13) or hour == 13 and minute <= 10:
+                if hour in range(9, 13) or hour == 13 and minute < 10:
                     return "active"
                 else:
                     return "setback"
