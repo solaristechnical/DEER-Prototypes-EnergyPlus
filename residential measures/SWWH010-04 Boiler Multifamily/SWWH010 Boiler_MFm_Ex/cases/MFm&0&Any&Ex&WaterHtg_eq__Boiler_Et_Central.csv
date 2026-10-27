@@ -1,0 +1,7 @@
+skip,case_name,:combi,:central_dhw,:use_recirc,:water_heater_type,:thermal_eff,:dhw_heating_source,:dhw_boiler_eff,:sch
+,RG-WaterHtg_eq-Boiler_Et_Central-0p80Et,FALSE,TRUE,FALSE,gas,1,boiler,0.8,MFm_minute_dhw_demand_fraction.csv
+,RG-WaterHtg_eq-Boiler_Et_Central-0p96Et,FALSE,TRUE,FALSE,gas,1,boiler,0.96,MFm_minute_dhw_demand_fraction.csv
+,RG-WaterHtg_eq-Boiler_Et_Central-0p98Et,FALSE,TRUE,FALSE,gas,1,boiler,0.98,MFm_minute_dhw_demand_fraction.csv
+,RG-WaterHtg_eq-Boiler_Et_Central-0p80Et-Recirc,FALSE,TRUE,TRUE,gas,1,boiler,0.8,MFm_minute_dhw_demand_fraction.csv
+,RG-WaterHtg_eq-Boiler_Et_Central-0p96Et-Recirc,FALSE,TRUE,TRUE,gas,1,boiler,0.96,MFm_minute_dhw_demand_fraction.csv
+,RG-WaterHtg_eq-Boiler_Et_Central-0p98Et-Recirc,FALSE,TRUE,TRUE,gas,1,boiler,0.98,MFm_minute_dhw_demand_fraction.csv
