@@ -1,0 +1,5 @@
+skip,case_name,:heat_type,:combi,:system_type,:cooling_coil_cop,:heating_coil_cop
+,RE-HV-PTAC-8.56EER,,,PTAC,2.9,
+,RE-HV-PTAC-9.42EER,,,PTAC,3.19,
+,RE-HV-PTAC-10.70EER,,,PTAC,3.63,
+,RE-HV-PTAC-11.77EER,,,PTAC,3.99,
