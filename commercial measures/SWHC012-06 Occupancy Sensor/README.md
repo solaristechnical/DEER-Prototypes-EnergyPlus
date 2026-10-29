@@ -11,6 +11,7 @@ This folder contians the commercial Occupancy Sensor measure setup used for DEER
 - For generated schedules, use calendar year 2009 (start day = Thursday)
 - Added lines to Com.py to deal with hardsize instance files
 - Removed unused cohorts and cases to align with eTRM offerings
+- Updated query file to include Speed 2 cooling capacity fo rmultispeed cooling coil
 
 ## Cohorts and Cases
 
@@ -27,6 +28,7 @@ The file 'query_SWHC012.txt' includes queries for cooling capacity. After runnin
 cd 'commercial measures/SWHC012-06'
 python result2.py -q query_SWHC012.txt
 '''
+Note that the gross Speed 2 cooling coil capacity value is mislabeled as "ComponentSizingSummary/Entire Facility/Coil:Cooling:DX:MultiSpeed/User-Specified Speed 1 Rated Evaporative Condenser Pump Power Consumption/CLASSROOM E1 WEST PERIM (G.W1) SZ-VAV COOLING COIL" but has been verified to output the correct Speed 2 value.
 
 ## Data Transformation and Post-Processing
 Measure Working List: DEER_EnergyPlus_Modelkit_Measure_list_working_SWHC012-06.xlsx
