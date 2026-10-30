@@ -1,0 +1,9 @@
+skip,case_name,sizing_case,:cool_type,:heat_type,sheathing_consol_layer_thickness,sheathing_consol_layer_conductivity,:wall_consol_layer_thickness,:wall_consol_layer_conductivity,wall_insulation_layer_thickness,wall_insulation_layer_conductivity
+,BS-BlowInIns-R0_rDXGF,,DX,GF,0.0127,0.0940184,0.127,0.638169643,0.0127,0.0940184
+,BS-BlowInIns-R13_rDXGF,BS-BlowInIns-R0_rDXGF,DX,GF,0.0127,0.0940184,0.127,0.084459412,0.0127,0.0940184
+,BS-BlowInIns-R0_rDXHP,,DX,DX,0.0127,0.0940184,0.127,0.638169643,0.0127,0.0940184
+,BS-BlowInIns-R13_rDXHP,BS-BlowInIns-R0_rDXHP,DX,DX,0.0127,0.0940184,0.127,0.084459412,0.0127,0.0940184
+,BS-BlowInIns-R0_rNCEH,,NC,EH,0.0127,0.0940184,0.127,0.638169643,0.0127,0.0940184
+,BS-BlowInIns-R13_rNCEH,BS-BlowInIns-R0_rNCEH,NC,EH,0.0127,0.0940184,0.127,0.084459412,0.0127,0.0940184
+,BS-BlowInIns-R0_rNCGF,,NC,GF,0.0127,0.0940184,0.127,0.638169643,0.0127,0.0940184
+,BS-BlowInIns-R13_rNCGF,BS-BlowInIns-R0_rNCGF,NC,GF,0.0127,0.0940184,0.127,0.084459412,0.0127,0.0940184
