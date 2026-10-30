@@ -1,4 +1,4 @@
-skip,case_name,sizing_case,:cool_type,:heat_type,sheathing_consol_layer_thickness,sheathing_consol_layer_conductivity,:wall_consol_layer_thickness,:wall_consol_layer_conductivity,wall_insulation_layer_thickness,wall_insulation_layer_conductivity
+skip,case_name,sizing_case,:cool_type,:heat_type,:sheathing_consol_layer_thickness,:sheathing_consol_layer_conductivity,:wall_consol_layer_thickness,:wall_consol_layer_conductivity,:wall_insulation_layer_thickness,:wall_insulation_layer_conductivity
 ,RE-BldgShell-WallBlowIns-R0-DXGF,,DX,GF,0.0127,0.0940184,0.127,0.638169643,0.0127,0.0940184
 ,RE-BldgShell-WallBlowIns-R13-DXGF,RE-BldgShell-WallBlowIns-R0-DXGF,DX,GF,0.0127,0.0940184,0.127,0.084459412,0.0127,0.0940184
 ,RE-BldgShell-WallBlowIns-R0-DXHP,,DX,DX,0.0127,0.0940184,0.127,0.638169643,0.0127,0.0940184
