@@ -45,8 +45,8 @@ parameter "glass_u", :default=>0.66['U-IP']
 parameter "glass_shgc", :default=>0.52
 
 # exterior wall
-parameter "sheathing_consol_layer_thickness", :default=>0.0127['m']
-parameter "sheathing_consol_layer_conductivity", :default=>0.0940184
+# parameter "sheathing_consol_layer_thickness", :default=>0.0127['m']
+# parameter "sheathing_consol_layer_conductivity", :default=>0.0940184
 parameter "wall_consol_layer_thickness", :default=>0.127['m']
 parameter "wall_consol_layer_conductivity", :default=>0.057165
 parameter "wall_insulation_layer_thickness", :default=>0.0127['m']
