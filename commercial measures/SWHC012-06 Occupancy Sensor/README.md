@@ -10,7 +10,7 @@ This folder contians the commercial Occupancy Sensor measure setup used for DEER
 - Reverted interim workaround (old version of prototypes)
 - For generated schedules, use calendar year 2009 (start day = Thursday)
 - Added lines to Com.py to deal with hardsize instance files
-- Removed unused cohorts and cases to align with eTRM offerings
+- Removed DXGF case for ERC and DXHP for EPr and ESe to align with eTRM offerings
 - Updated query file to include Speed 2 cooling capacity for multispeed cooling coil
 
 ## Cohorts and Cases
