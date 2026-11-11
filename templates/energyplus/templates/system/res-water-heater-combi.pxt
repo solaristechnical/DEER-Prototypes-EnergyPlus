@@ -45,7 +45,7 @@ parameter "use_recirc", :default => false, :domain => Boolean
 parameter "recirc_schedule", :default => "DHW Recirculation Constant Flow Frac Schedule"
 parameter "recirc_pipe_id", :default => 0.0254 ['m']
 parameter "recirc_outlet_pipe_length", :default => 30.48
-parameter "recirc_peak_flow", :default => 0.000005060 ['m3/s']
+parameter "recirc_peak_flow", :default => 0.00003 ['m3/s'] # For existing MFm with 24 units, recommended value for new construction is 0.00002.
 # Solaris-Technical - Behzad S. Rizi - Parametarized recirc pump design head for dedicated DHW recirculation pump
 parameter "recirc_pump_design_head", :default => 21521.4467194739 #Default is aligned with water-heater.pxt
 parameter "recirc_fraction_constant_mode", :default => 1.0
