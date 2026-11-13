@@ -2,28 +2,48 @@
 Prepared by Solaris Technical, Yasemin Agi - 2026-07-23
 This document describes the steps necessary to reproduce simulations and model outputs for this measure.
 
-## Step 1
+# Step 1
 ```
 cd C:/DEER-Prototypes-EnergyPlus
 cd C:/.../SWHC045-07 Heat Pump HVAC Fuel Sub/SWHC045-07 Heat Pump HVAC Fuel Sub_DMo_Ex
 modelkit rake run
 python ../../../scripts/result.py . --queryfile query.txt
+```
 
 Confirm script generated 'results-sizing-agg.csv' and 'results-sizing-detail.csv'.
+Delete 'results-sizing-detail.csv'.
 Rename 'results-sizing-agg.csv' to 'results-summary.csv' for use in load shapes later.
-```
+
 Repeat for:
 SWHC045-07 Heat Pump HVAC Fuel Sub_MFm_Ex
 SWHC045-07 Heat Pump HVAC Fuel Sub_SFm_1975
 SWHC045-07 Heat Pump HVAC Fuel Sub_SFm_1985
 
-## Step 2
+# Step 2
+```
 cd C:/.../SWHC045-07 Heat Pump HVAC Fuel Sub
 python result2.py --queryfile "query.txt"
 ```
 Confirm script generated 'simdata.csv'.
 
-## Step 3 
+# Step 3
+```
+cd C:/.../SWHC045-07 Heat Pump HVAC Fuel Sub/SWHC045-07 Heat Pump HVAC Fuel Sub_DMo_Ex
+python ../../../scripts/result.py . --queryfile query_coil.txt
+```
+Confirm script generated 'results-sizing-agg.csv' and 'results-sizing-detail.csv'.
+
+```
+python result_filtered.py
+```
+Confirm script generated 'sizing_agg_filtered.csv'.
+
+Repeat for:
+SWHC045-07 Heat Pump HVAC Fuel Sub_MFm_Ex
+SWHC045-07 Heat Pump HVAC Fuel Sub_SFm_1975
+SWHC045-07 Heat Pump HVAC Fuel Sub_SFm_1985
+
+# Step 4
 ```
 cd C:\DEER-Prototypes-EnergyPlus
 cd "scripts/data transformation"

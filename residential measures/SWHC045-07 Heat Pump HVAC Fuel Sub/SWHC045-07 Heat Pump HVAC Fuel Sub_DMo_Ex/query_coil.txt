@@ -1,0 +1,2 @@
+EquipmentSummary/Entire Facility/Cooling Coils/Nominal Total Capacity/EL1 HVAC COOLING COIL, DMo Cooling Capacity 01
+EquipmentSummary/Entire Facility/Cooling Coils/Nominal Total Capacity/EL2 HVAC COOLING COIL, DMo Cooling Capacity 02
