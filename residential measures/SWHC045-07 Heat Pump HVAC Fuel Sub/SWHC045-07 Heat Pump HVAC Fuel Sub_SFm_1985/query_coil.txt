@@ -1,0 +1,4 @@
+EquipmentSummary/Entire Facility/Cooling Coils/Nominal Total Capacity/EL7 HVAC COOLING COIL, SFm 1 Story Cooling Capacity 01
+EquipmentSummary/Entire Facility/Cooling Coils/Nominal Total Capacity/EL8 HVAC COOLING COIL, SFm 1 Story Cooling Capacity 02
+EquipmentSummary/Entire Facility/Cooling Coils/Nominal Total Capacity/EL2 HVAC COOLING COIL, SFm 2 Story Cooling Capacity 01
+EquipmentSummary/Entire Facility/Cooling Coils/Nominal Total Capacity/EL5 HVAC COOLING COIL, SFm 2 Story Cooling Capacity 02
