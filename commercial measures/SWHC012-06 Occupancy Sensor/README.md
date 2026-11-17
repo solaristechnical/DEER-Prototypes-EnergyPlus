@@ -57,12 +57,12 @@ Providing a filename via the parameter classroom_class_setpoint_temp_schedule pa
 ```
 
 ## Simulation and Post-Processing Steps
-- Copy `22-2.csv` from sizing-map folder into **C:\Program Files (x86)\Modelkit Caboodle\lib\rubygems\gems\modelkit-energyplus-0.3.0\resources\sizing-map** to ensure simulations run
+- Copy `22-2.csv` from **SWHC012-06\sizing-map** into **C:\Program Files (x86)\Modelkit Caboodle\lib\rubygems\gems\modelkit-energyplus-0.3.0\resources\sizing-map** to ensure simulations run
 - Run `schedule.py` to generate schedules for each building type
 - Run simulations and confirm result files
 - Scrape outputs with `scripts/result2.py` using `query_SWHC012.txt` (see below for more details)
 - Extract normalizing units with `result2.py` using `query_SWHC012_normalizing.txt` (see below for more details)
-- Run transformation script `Com.py` from 'scripts/data transformation'
+- Run transformation script `Com.py` from **scripts/data transformation**
 - Review generated files: `current_msr_mat.csv`, `sim_annual.csv`, `sim_hourly_eu.csv`, `sim_hourly_wb.csv`, `CEDARS_LoadShape_Com.zip`
 
 ### Extracting Energy Usages
@@ -97,7 +97,7 @@ To extract the cooling capacity normalizing units, use the following steps:
 
 4. Repeat Steps 1 through 3 for the **New** vintage subfolder.
 
-5. Change to the parent directoy and continue with commands:
+5. Change to the parent directory and continue with commands:
 
    ```
    cd 'C:/DEER-Prototypes-EnergyPlus/commercial measures/SWHC012-06 Occupancy Sensor'
