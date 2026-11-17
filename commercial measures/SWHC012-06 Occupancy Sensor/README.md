@@ -112,7 +112,13 @@ The classroom system names were manually identified by inspection of prototype r
 Measure Working List: `DEER_EnergyPlus_Modelkit_Measure_list_working_SWHC012-06.xlsx`
 
 ### Load Shape Workaround
-The load shape files (found in `CEDARS_LoadShape_Com.zip`) are missing the "NormUnit" column required for uploading to CEDARS. The missing column must be added manually into each of the 3 load shape files (one for each building type). The column must be added in between the "BldgLoc" and "Type (Whole Building or End Use)" columns with the column header 'NormUnit' and value 'Cap-Tons' for each line.
+The load shape files (located in `CEDARS_LoadShape_Com.zip`) are missing the normalizing unit column required for uploading to CEDARS. Use the following steps to update the load shape files:
+1. Unzip `CEDARS_LoadShape_Com.zip`.
+2. Open `CEDARS_LoadShape_Com_EPr.csv`.
+3. Add a column between 'BldgLoc' and 'Type (Whole Building or End Use)' called  'NormUnit'.
+4. Enter the value 'Cap-Tons' for all subsequent lines.
+5. Repeat Steps 2 through 4 for the other building type files (labeled `ERC` and `ESe`).
+6. Rezip the 3 edited files as `CEDARS_LoadShape_Com.zip`.
 
 ### Occupancy Schedule
 `OccSchedule vs TempSetpointSch.xlsx` shows details of the occupancy schedule and assigned temperature setpoints based on classroom usage, days of the week, and holidays.
