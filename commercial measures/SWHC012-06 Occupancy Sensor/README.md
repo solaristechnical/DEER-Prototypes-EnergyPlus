@@ -56,31 +56,30 @@ Providing a filename via the parameter classroom_class_setpoint_temp_schedule pa
     Yes;                     !- Adjust Schedule for Daylight Savings
 ```
 
-## Simulation and Post-Processing Steps
-- Copy `22-2.csv` from **sizing-map** folder into **C:\Program Files (x86)\Modelkit Caboodle\lib\rubygems\gems\modelkit-energyplus-0.3.0\resources\sizing-map**
+## Simulation and Post-Processing
+- Copy `22-2.csv` from the **sizing-map** folder into **C:\Program Files (x86)\Modelkit Caboodle\lib\rubygems\gems\modelkit-energyplus-0.3.0\resources\sizing-map**
 - Run `schedule.py` to generate schedules for each building type
 - Run simulations and confirm result files
-- Scrape outputs with `scripts/result2.py` using `query_SWHC012.txt` (see below for more details)
-- Extract normalizing units with `result2.py` using `query_SWHC012_normalizing.txt` (see below for more details)
+- Scrape energy usage outputs with `scripts/result2.py` using `query_SWHC012.txt` (see below for more details)
+- Extract normalizing units with `result2.py` and `result_filtered.py` using `query_SWHC012_normalizing.txt` (see below for more details)
 - Run transformation script `Com.py` from **scripts/data transformation**
-- Review generated files: `current_msr_mat.csv`, `sim_annual.csv`, `sim_hourly_eu.csv`, `sim_hourly_wb.csv`, `CEDARS_LoadShape_Com.zip`
+- Review result files: `simdata.csv`, `sizing_agg_filtered.csv`, `CEDARS_LoadShape_Com.zip`
 
 ### Extracting Energy Usages
-The file `query_SWHC012.txt` includes queries for energy usages. After running simulations: 
+The file `query_SWHC012.txt` includes queries for energy usages. To extract the energy usages after running simulations, enter the following commands: 
 ```
-cd 'commercial measures/SWHC012-06'
+cd 'C:/DEER-Prototypes/commercial measures/SWHC012-06 Occupancy Sensor'
 python result2.py -q query_SWHC012.txt
 ```
 
 ### Extracting Normalizing Units
-Developers applied the measure to only those zones representing classrooms, taken to mean where zone_type prefix is *classroom_class*. Developers considered area (from zones), cooling capacity (from cooling coils), and cooling capacity (from AirLoopHVAC systems) as candidates for normalizing units, ultimately choosing cooling capacity from AirLoopHVAC systems.
+The file `query_SWHC012_normalizing.txt` Developers applied the measure to only those zones representing classrooms, taken to mean where zone_type prefix is *classroom_class*. Developers considered area (from zones), cooling capacity (from cooling coils), and cooling capacity (from AirLoopHVAC systems) as candidates for normalizing units, ultimately choosing cooling capacity from AirLoopHVAC systems.
 
 The total cooling capacity of classroom zones in a given building simulation is calculated using a multi-step process to tabulate cooling capacity for each system in the model and then filter relevant systems and aggregate the capacity of matching systems.
 
 To extract the cooling capacity normalizing units, use the following steps:
 
 1. Change directory into the **Ex** vintage subfolder and run the data extraction script with commands:
-
    ```
    cd 'C:/DEER-Prototypes-EnergyPlus/commercial measures/SWHC012-06 Occupancy Sensor/SWHC012-06 Occupancy Sensor_Ex'
    python ../result2.py -s -t -q ../query_SWHC012_normalizing.txt
@@ -93,19 +92,18 @@ To extract the cooling capacity normalizing units, use the following steps:
    ```
    At this point, the user should have a new file `results-sizing-detail.csv` in the database.
 
-3. Export `results-sizing-detail.csv` from the database to the Ex vintage subfolder.
+3. Export `results-sizing-detail.csv` from the database to the **Ex** vintage subfolder.
 
 4. Repeat Steps 1 through 3 for the **New** vintage subfolder.
 
-5. Change to the parent directory and continue with commands:
-
+5. Change to the parent directory and continue with the command to filter the sizing results:
    ```
    cd 'C:/DEER-Prototypes-EnergyPlus/commercial measures/SWHC012-06 Occupancy Sensor'
    python result_filtered.py
    ```
-   The result_filtered script cross-references the `result-sizing-detail.csv` and `coil_list.xlsx` in order to filter relevant zones or systems. At this point, the user should have a new file `sizing_agg_filtered.csv` in each vintage subfolder.
+   The result_filtered script cross-references the `results-sizing-detail.csv` and `coil_list.xlsx` in order to filter relevant zones or systems. At this point, the user should have a new file `sizing_agg_filtered.csv` in each vintage subfolder.
 
-6. Combine the sizing_agg_filtered files into one CSV file and archive the result among energy model outputs. The combined `sizing_agg_filtered.csv` contains the normalizing unit lookup table, which is used in the energy savings calculation workbook.
+6. Combine the `sizing_agg_filtered.csv` files into one CSV file and archive with the energy model outputs. The combined file contains the full normalizing unit lookup table, which is used in the energy savings calculation workbook.
 
 ### Classroom System Names
 The classroom system names were manually identified by inspection of prototype root files and tabulated in the file `coil_list.xlsx` (sheet "Main coils").
@@ -114,7 +112,7 @@ The classroom system names were manually identified by inspection of prototype r
 Measure Working List: `DEER_EnergyPlus_Modelkit_Measure_list_working_SWHC012-06.xlsx`
 
 ### Load Shape Workaround
-The load shape files (found in `CEDARS_LoadShape_Com.zip`) are missing the 'NormUnit' column required for uploading to CEDARS. The missing column must be added manually into each of the 3 load shape files (one for each building type). The column must be added in between the 'BldgLoc' and 'Type (Whole Building or End Use)' columns with the column header 'NormUnit' and value 'Cap-Tons' for each line.
+The load shape files (found in `CEDARS_LoadShape_Com.zip`) are missing the "NormUnit" column required for uploading to CEDARS. The missing column must be added manually into each of the 3 load shape files (one for each building type). The column must be added in between the "BldgLoc" and "Type (Whole Building or End Use)" columns with the column header 'NormUnit' and value 'Cap-Tons' for each line.
 
 ### Occupancy Schedule
 `OccSchedule vs TempSetpointSch.xlsx` shows details of the occupancy schedule and assigned temperature setpoints based on classroom usage, days of the week, and holidays.
