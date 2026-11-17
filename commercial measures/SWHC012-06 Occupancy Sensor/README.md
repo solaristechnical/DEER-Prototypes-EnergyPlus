@@ -56,7 +56,7 @@ Providing a filename via the parameter classroom_class_setpoint_temp_schedule pa
     Yes;                     !- Adjust Schedule for Daylight Savings
 ```
 
-## Simulation and Post-Processing
+## Simulation and Post-Processing Steps
 - Copy `22-2.csv` from the **sizing-map** folder into **C:\Program Files (x86)\Modelkit Caboodle\lib\rubygems\gems\modelkit-energyplus-0.3.0\resources\sizing-map**
 - Run `schedule.py` to generate schedules for each building type
 - Run simulations and confirm result files
@@ -105,9 +105,6 @@ To extract the cooling capacity normalizing units, use the following steps:
 
 6. Combine the `sizing_agg_filtered.csv` files into one CSV file and archive with the energy model outputs. The combined file contains the full normalizing unit lookup table, which is used in the energy savings calculation workbook.
 
-### Classroom System Names
-The classroom system names were manually identified by inspection of prototype root files and tabulated in the file `coil_list.xlsx` (sheet "Main coils").
-
 ### Data Transformation and Post-Processing
 Measure Working List: `DEER_EnergyPlus_Modelkit_Measure_list_working_SWHC012-06.xlsx`
 
@@ -122,3 +119,6 @@ The load shape files (located in `CEDARS_LoadShape_Com.zip`) are missing the nor
 
 ### Occupancy Schedule
 `OccSchedule vs TempSetpointSch.xlsx` shows details of the occupancy schedule and assigned temperature setpoints based on classroom usage, days of the week, and holidays.
+
+### Classroom System Names
+The classroom system names were manually identified by inspection of prototype root files and tabulated in the file `coil_list.xlsx` (sheet "Main coils").
