@@ -62,7 +62,7 @@ Providing a filename via the parameter classroom_class_setpoint_temp_schedule pa
 - Run simulations and confirm result files
 - Scrape outputs with `scripts/result2.py` using `query_SWHC012.txt` (see below for more details)
 - Extract normalizing units with `result2.py` using `query_SWHC012_normalizing.txt` (see below for more details)
-- Run transformation scripts from 'scripts/data transformation'
+- Run transformation script `Com.py` from 'scripts/data transformation'
 - Review generated files: `current_msr_mat.csv`, `sim_annual.csv`, `sim_hourly_eu.csv`, `sim_hourly_wb.csv`, `CEDARS_LoadShape_Com.zip`
 
 ### Extracting Energy Usages
@@ -83,7 +83,7 @@ To extract the cooling capacity normalizing units, use the following steps:
 
    ```
    cd 'C:/DEER-Prototypes-EnergyPlus/commercial measures/SWHC012-06 Occupancy Sensor/SWHC012-06 Occupancy Sensor_Ex'
-   python result2.py -s -t -q ../query_SWHC012_normalizing.txt
+   python ../result2.py -s -t -q ../query_SWHC012_normalizing.txt
    ```
    At this point, the user should have a new SQLite file `simdata.sqlite` saved by the script with tables sim_metadata and sim_tabular, which contains cooling capacity figures for each building instance and system.
 
@@ -103,7 +103,7 @@ To extract the cooling capacity normalizing units, use the following steps:
    cd 'C:/DEER-Prototypes-EnergyPlus/commercial measures/SWHC012-06 Occupancy Sensor'
    python result_filtered.py
    ```
-   The result_filtered script cross-references the result-sizing-detail.csv and coil_list.xlsx in order to filter relevant zones or systems. At this point, the user should have a new file `sizing_agg_filtered.csv` in each vintage subfolder.
+   The result_filtered script cross-references the `result-sizing-detail.csv` and `coil_list.xlsx` in order to filter relevant zones or systems. At this point, the user should have a new file `sizing_agg_filtered.csv` in each vintage subfolder.
 
 6. Combine the sizing_agg_filtered files into one CSV file and archive the result among energy model outputs. The combined `sizing_agg_filtered.csv` contains the normalizing unit lookup table, which is used in the energy savings calculation workbook.
 
