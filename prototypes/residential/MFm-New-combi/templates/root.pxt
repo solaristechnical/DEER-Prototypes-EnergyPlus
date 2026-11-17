@@ -9,7 +9,9 @@ parameter "run_name", :default=>"Building"
 
 #domestic water heating
 parameter "water_heater_type", :default => "gas", :description => "currently availabily water heater types are gas, elec, gas_tankless, hpwh, 120v_hpwh"
-
+# Solaris Technical - Safia Sheerin - 2026-10-29 - Add central multifamily DHW support.
+parameter "central_dhw", :default => false, :domain => Boolean
+parameter "central_dhw_zone", :default => "", :domain => String
 #hvac type
 parameter "hvac_type", :default=>""
 
@@ -26,7 +28,7 @@ end
 
 import "system/res-water-heater-combi.pxt", :group => "water_heating" do
   include "*"
-  exclude "water_heater_name|water_heater_zone|water_use_zone|system_name|sch"
+  exclude "water_heater_name|water_heater_zone|water_use_zone|system_name|sch|water_uses"
   parameter "water_heater_type"
 end
 
@@ -186,6 +188,8 @@ all_zones = [
 ] #two story MFm control zone and air handler zone, and floor area
 all_dhw = {}
 all_hydronic = {}
+# Collect one DHW load per dwelling unit when central_dhw is enabled.
+central_water_uses = []
 
 for zone in all_zones
 
@@ -212,17 +216,27 @@ for zone in all_zones
     # create list of dhw systems and corresponding zones
     all_dhw[water_heater_name] ||= []
     all_dhw[water_heater_name] << system_name
-
-  insert 'system/res-water-heater-combi.pxt',
-    :water_heater_name => water_heater_name,
-    :water_heater_zone => water_heater_zone,
-    :water_use_zone => control_zone_name,
-    :system_name => system_name,
-    :combi => combi,
-    :dhw_demand_sch => dhw_demand_sch,
-    :climate_zone_num => climate_zone,
-    :dhw_stpt_sch => dhw_stpt_sch,
-    **water_heating
+    if central_dhw
+    # Keep one DHW demand load per dwelling unit, but connect all loads
+    # to one building-level central DHW plant after the zone loop.
+        central_water_uses << {
+            :name => water_heater_name,
+            :zone_name => control_zone_name,
+            :peak_flow => peak_flow
+    }
+    else
+        insert 'system/res-water-heater-combi.pxt',
+            :water_heater_name => water_heater_name,
+            :water_heater_zone => water_heater_zone,
+            :water_use_zone => control_zone_name,
+            :system_name => system_name,
+            :combi => combi,
+            :central_dhw => false,
+            :dhw_demand_sch => dhw_demand_sch,
+            :climate_zone_num => climate_zone,
+            :dhw_stpt_sch => dhw_stpt_sch,
+            **water_heating
+    end
 
   insert 'zoneloads/MFm_new_ductonly.imf',
     :zone_name=>control_zone_name,
@@ -241,6 +255,24 @@ for zone in all_zones
     :system_name => system_name,
     :secondary_zone => secondary_zone,
     **hvac_zone
+end
+# Generate one centralized MFm DHW system after all dwelling-unit loads are collected.
+if central_dhw
+  raise "central_dhw and combi cannot both be true" if combi
+
+  central_dhw_zone_name =
+    central_dhw_zone.empty? ? all_zones[0][1] : central_dhw_zone
+
+  insert 'system/res-water-heater-combi.pxt',
+    :water_heater_name => "Central DHW",
+    :water_heater_zone => central_dhw_zone_name,
+    :water_uses => central_water_uses,
+    :central_dhw => true,
+    :combi => false,
+    :dhw_demand_sch => dhw_demand_sch,
+    :climate_zone_num => climate_zone,
+    :dhw_stpt_sch => dhw_stpt_sch,
+    **water_heating
 end
 
 if (!combi and (heat_type == "HW" or heat_type == "ST"))
