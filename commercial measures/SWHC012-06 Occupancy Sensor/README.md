@@ -57,7 +57,7 @@ Providing a filename via the parameter classroom_class_setpoint_temp_schedule pa
 ```
 
 ## Simulation and Post-Processing Steps
-- Copy `22-2.csv` from **SWHC012-06\sizing-map** into **C:\Program Files (x86)\Modelkit Caboodle\lib\rubygems\gems\modelkit-energyplus-0.3.0\resources\sizing-map** to ensure simulations run
+- Copy `22-2.csv` from **sizing-map** folder into **C:\Program Files (x86)\Modelkit Caboodle\lib\rubygems\gems\modelkit-energyplus-0.3.0\resources\sizing-map**
 - Run `schedule.py` to generate schedules for each building type
 - Run simulations and confirm result files
 - Scrape outputs with `scripts/result2.py` using `query_SWHC012.txt` (see below for more details)
